@@ -826,7 +826,6 @@
     "cardBackground": "卡片背景",
     "cardBlur": "卡片模糊",
     "cardBlurIntensity": "透明强度",
-    "cardExtraBlurIntensity": "额外模糊强度",
     "cardBlurType": "模糊类型",
     "cardDesign": "卡片设计",
     "cardDesigns": {
@@ -839,6 +838,7 @@
         "label": "历史块"
       }
     },
+    "cardExtraBlurIntensity": "额外模糊强度",
     "cardLayout": "卡片布局",
     "cardLayouts": {
       "classic": {
