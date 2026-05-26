@@ -283,17 +283,17 @@ const Node = ({ basic, live, online, pingStatsEnabled = false }: NodeProps) => {
   };
 
   const contentStyles = {
-    classic: "flex-1 p-4 pt-4",
-    modern: "flex-1 p-4 pt-4 bg-gradient-to-b from-background/50 to-transparent",
-    minimal: "flex-1 p-4 pt-3",
-    detailed: "flex-1 p-5 pt-4 bg-gradient-to-b from-background to-muted/10",
+    classic: "px-4 pb-2 pt-4",
+    modern: "px-4 pb-2 pt-4 bg-gradient-to-b from-background/50 to-transparent",
+    minimal: "px-4 pb-2 pt-3",
+    detailed: "px-5 pb-2 pt-4 bg-gradient-to-b from-background to-muted/10",
   };
 
   const footerStyles = {
-    classic: "pb-3 pt-0 px-4 flex justify-between items-center",
-    modern: "pb-3 pt-0 px-4 flex justify-between items-center bg-muted/20 border-t",
-    minimal: "pb-3 pt-0 px-4 flex justify-between items-center",
-    detailed: "pb-4 pt-0 px-5 flex justify-between items-center bg-muted/30 border-t-2",
+    classic: "shrink-0 pb-3 pt-0 px-4 flex justify-between items-center",
+    modern: "shrink-0 pb-3 pt-0 px-4 flex justify-between items-center bg-muted/20 border-t",
+    minimal: "shrink-0 pb-3 pt-0 px-4 flex justify-between items-center",
+    detailed: "shrink-0 pb-4 pt-0 px-5 flex justify-between items-center bg-muted/30 border-t-2",
   };
 
   return (
