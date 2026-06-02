@@ -2,7 +2,6 @@
 
 import React from "react";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import CircleChart from "./CircleChart";
 import { Progress } from "@/components/ui/progress";
 
@@ -18,9 +17,7 @@ interface AdaptiveChartProps {
 export default function AdaptiveChart({ value, label, subLabel, color, compact = false, animate = false }: AdaptiveChartProps) {
   const { themeConfig } = useTheme();
   const chartValue = Math.min(Math.max(value, 0), 100);
-  const shouldAnimateVisual = animate && themeConfig.graphDesign !== 'minimal';
-  const animatedValue = useAnimatedNumber(chartValue, { enabled: shouldAnimateVisual });
-  const visualValue = Math.min(Math.max(animatedValue, 0), 100);
+  const visualValue = chartValue;
 
   // Get theme colors - must use full class names for Tailwind JIT
   const getColorClass = (val: number) => {
@@ -185,7 +182,7 @@ export default function AdaptiveChart({ value, label, subLabel, color, compact =
       color={color}
       compact={compact}
       displayValue={chartValue}
-      animationDuration={animate ? 0 : 800}
+      animationDuration={animate ? 800 : 0}
     />
   );
 }
