@@ -10,13 +10,24 @@ interface CircleChartProps {
   subLabel?: string;
   color?: string; // Optional override
   compact?: boolean; // Compact mode for table views
+  displayValue?: number; // Optional static text value when the arc is animated
+  animationDuration?: number;
 }
 
-export default function CircleChart({ value, label, subLabel, color, compact = false }: CircleChartProps) {
+export default function CircleChart({
+  value,
+  label,
+  subLabel,
+  color,
+  compact = false,
+  displayValue,
+  animationDuration = 800,
+}: CircleChartProps) {
   const { themeConfig } = useTheme();
 
   // Clamp value
   const chartValue = Math.min(Math.max(value, 0), 100);
+  const textValue = Math.min(Math.max(displayValue ?? value, 0), 100);
 
   // Get theme color based on selected color theme and value
   const getThemeColor = () => {
@@ -78,7 +89,7 @@ export default function CircleChart({ value, label, subLabel, color, compact = f
                 background={{ fill: 'rgba(128, 128, 128, 0.1)' }}
                 dataKey="value"
                 cornerRadius={10}
-                animationDuration={800}
+                animationDuration={animationDuration}
                 animationEasing="ease-out"
               />
             </RadialBarChart>
@@ -87,7 +98,7 @@ export default function CircleChart({ value, label, subLabel, color, compact = f
           {/* Centered Percentage for compact mode */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span className="text-[11px] font-bold text-foreground">
-              {Math.round(chartValue)}%
+              {Math.round(textValue)}%
             </span>
           </div>
         </div>
@@ -120,7 +131,7 @@ export default function CircleChart({ value, label, subLabel, color, compact = f
               background={{ fill: 'rgba(128, 128, 128, 0.1)' }}
               dataKey="value"
               cornerRadius={10}
-              animationDuration={800}
+              animationDuration={animationDuration}
               animationEasing="ease-out"
             />
           </RadialBarChart>
@@ -129,7 +140,7 @@ export default function CircleChart({ value, label, subLabel, color, compact = f
         {/* Centered Percentage */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span className="text-base font-bold text-foreground drop-shadow-sm tracking-tight">
-            {Math.round(chartValue)}%
+            {Math.round(textValue)}%
           </span>
         </div>
       </div>

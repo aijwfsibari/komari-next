@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import CircleChart from "./CircleChart";
 import { Progress } from "@/components/ui/progress";
 
@@ -11,11 +12,15 @@ interface AdaptiveChartProps {
   subLabel?: string;
   color?: string;
   compact?: boolean; // Compact mode for table views
+  animate?: boolean;
 }
 
-export default function AdaptiveChart({ value, label, subLabel, color, compact = false }: AdaptiveChartProps) {
+export default function AdaptiveChart({ value, label, subLabel, color, compact = false, animate = false }: AdaptiveChartProps) {
   const { themeConfig } = useTheme();
   const chartValue = Math.min(Math.max(value, 0), 100);
+  const shouldAnimateVisual = animate && themeConfig.graphDesign !== 'minimal';
+  const animatedValue = useAnimatedNumber(chartValue, { enabled: shouldAnimateVisual });
+  const visualValue = Math.min(Math.max(animatedValue, 0), 100);
 
   // Get theme colors - must use full class names for Tailwind JIT
   const getColorClass = (val: number) => {
@@ -90,7 +95,7 @@ export default function AdaptiveChart({ value, label, subLabel, color, compact =
       return (
         <div className="flex items-center justify-center">
           <div className="w-[50px] space-y-1">
-            <Progress value={chartValue} className="h-1.5" />
+            <Progress value={visualValue} className="h-1.5" />
             <div className={`text-[10px] font-bold text-center ${getColorClass(chartValue)}`}>
               {Math.round(chartValue)}%
             </div>
@@ -107,7 +112,7 @@ export default function AdaptiveChart({ value, label, subLabel, color, compact =
           )}
         </div>
         <div className="w-full max-w-[80px] space-y-1">
-          <Progress value={chartValue} className="h-2" />
+          <Progress value={visualValue} className="h-2" />
           <div className={`text-sm font-bold text-center ${getColorClass(chartValue)}`}>
             {Math.round(chartValue)}%
           </div>
@@ -124,8 +129,8 @@ export default function AdaptiveChart({ value, label, subLabel, color, compact =
           <div className="h-[40px] w-[30px] flex flex-col justify-end items-center">
             <div className="w-full flex flex-col justify-end items-center h-full relative">
               <div
-                className={`w-full rounded-t-lg transition-all duration-500 ${getBarColorClass(chartValue)}`}
-                style={{ height: `${chartValue}%` }}
+                className={`w-full rounded-t-lg transition-all duration-500 ${getBarColorClass(visualValue)}`}
+                style={{ height: `${visualValue}%` }}
               />
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className={`text-[9px] font-bold drop-shadow-lg ${
@@ -145,8 +150,8 @@ export default function AdaptiveChart({ value, label, subLabel, color, compact =
         <div className="h-[90px] w-[60px] flex flex-col justify-end items-center">
           <div className="w-full flex flex-col justify-end items-center h-full relative">
             <div
-              className={`w-full rounded-t-lg transition-all duration-500 ${getBarColorClass(chartValue)}`}
-              style={{ height: `${chartValue}%` }}
+              className={`w-full rounded-t-lg transition-all duration-500 ${getBarColorClass(visualValue)}`}
+              style={{ height: `${visualValue}%` }}
             />
             <div className="absolute inset-0 flex items-center justify-center">
               <span className={`text-xs font-bold drop-shadow-lg ${
@@ -172,5 +177,15 @@ export default function AdaptiveChart({ value, label, subLabel, color, compact =
   }
 
   // Default: Circle Design
-  return <CircleChart value={value} label={label} subLabel={subLabel} color={color} compact={compact} />;
+  return (
+    <CircleChart
+      value={visualValue}
+      label={label}
+      subLabel={subLabel}
+      color={color}
+      compact={compact}
+      displayValue={chartValue}
+      animationDuration={animate ? 0 : 800}
+    />
+  );
 }

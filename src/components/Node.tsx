@@ -378,16 +378,19 @@ const Node = ({ basic, live, online, pingStatsEnabled = false }: NodeProps) => {
             value={liveData.cpu.usage}
             label="CPU"
             subLabel={`${liveData.cpu.usage.toFixed(1)}%`}
+            animate
           />
           <AdaptiveChart
             value={memoryUsagePercent}
             label="RAM"
             subLabel={formatBytes(liveData.ram.used)}
+            animate
           />
           <AdaptiveChart
             value={diskUsagePercent}
             label="Disk"
             subLabel={formatBytes(liveData.disk.used)}
+            animate
           />
         </div>
 
