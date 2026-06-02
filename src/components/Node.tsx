@@ -487,6 +487,11 @@ type NodeGridProps = {
   liveData: LiveData;
 };
 
+type QueuedPingStatsRow = {
+  rowIndex: number;
+  uuids: string[];
+};
+
 const NODE_GRID_MIN_COLUMN_WIDTH = 320;
 const NODE_GRID_GAP = 24;
 const PING_STATS_ROW_LOAD_DELAY_MS = 400;
@@ -495,37 +500,40 @@ const PING_STATS_ROW_ROOT_MARGIN = "360px 0px";
 export const NodeGrid = ({ nodes, liveData }: NodeGridProps) => {
   const gridRef = React.useRef<HTMLDivElement | null>(null);
   const [columns, setColumns] = React.useState(1);
-  const [pingStatsEnabledNodes, setPingStatsEnabledNodes] = React.useState<Set<string>>(
+  const [pingStatsActiveNodes, setPingStatsActiveNodes] = React.useState<Set<string>>(
     () => new Set()
   );
-  const pingStatsEnabledNodesRef = React.useRef(pingStatsEnabledNodes);
-  const queuedRowsRef = React.useRef<string[][]>([]);
+  const pingStatsActiveNodesRef = React.useRef(pingStatsActiveNodes);
+  const rowUuidsByIndexRef = React.useRef<string[][]>([]);
+  const activeRowItemsRef = React.useRef<Map<number, Set<string>>>(new Map());
+  const queuedRowsRef = React.useRef<QueuedPingStatsRow[]>([]);
   const queuedRowKeysRef = React.useRef<Set<string>>(new Set());
   const rowLoadTimerRef = React.useRef<number | null>(null);
   const processNextRowRef = React.useRef<() => void>(() => {});
 
   React.useEffect(() => {
-    pingStatsEnabledNodesRef.current = pingStatsEnabledNodes;
-  }, [pingStatsEnabledNodes]);
+    pingStatsActiveNodesRef.current = pingStatsActiveNodes;
+  }, [pingStatsActiveNodes]);
 
   React.useEffect(() => {
     processNextRowRef.current = () => {
       if (rowLoadTimerRef.current !== null) return;
 
-      const rowUuids = queuedRowsRef.current.shift();
-      if (!rowUuids) return;
+      const queuedRow = queuedRowsRef.current.shift();
+      if (!queuedRow) return;
 
-      const rowKey = rowUuids.join("|");
+      const rowKey = String(queuedRow.rowIndex);
       queuedRowKeysRef.current.delete(rowKey);
-      const pendingUuids = rowUuids.filter(
-        (uuid) => !pingStatsEnabledNodesRef.current.has(uuid)
-      );
+      const rowIsActive = (activeRowItemsRef.current.get(queuedRow.rowIndex)?.size || 0) > 0;
+      const pendingUuids = rowIsActive
+        ? queuedRow.uuids.filter((uuid) => !pingStatsActiveNodesRef.current.has(uuid))
+        : [];
 
       if (pendingUuids.length > 0) {
-        setPingStatsEnabledNodes((previous) => {
+        setPingStatsActiveNodes((previous) => {
           const next = new Set(previous);
           pendingUuids.forEach((uuid) => next.add(uuid));
-          pingStatsEnabledNodesRef.current = next;
+          pingStatsActiveNodesRef.current = next;
           return next;
         });
       }
@@ -544,19 +552,72 @@ export const NodeGrid = ({ nodes, liveData }: NodeGridProps) => {
     };
   }, []);
 
-  const enqueuePingStatsRow = React.useCallback((rowUuids: string[]) => {
+  const deactivatePingStatsRow = React.useCallback((rowIndex: number) => {
+    const rowUuids = rowUuidsByIndexRef.current[rowIndex] || [];
+    const rowKey = String(rowIndex);
+    queuedRowKeysRef.current.delete(rowKey);
+    queuedRowsRef.current = queuedRowsRef.current.filter(
+      (queuedRow) => queuedRow.rowIndex !== rowIndex
+    );
+
+    if (rowUuids.length === 0) return;
+
+    setPingStatsActiveNodes((previous) => {
+      const next = new Set(previous);
+      let changed = false;
+      rowUuids.forEach((uuid) => {
+        if (next.delete(uuid)) {
+          changed = true;
+        }
+      });
+
+      if (!changed) return previous;
+      pingStatsActiveNodesRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const enqueuePingStatsRow = React.useCallback((rowIndex: number, rowUuids: string[]) => {
+    if (rowUuids.length === 0) return;
+    if ((activeRowItemsRef.current.get(rowIndex)?.size || 0) === 0) return;
+
     const pendingUuids = rowUuids.filter(
-      (uuid) => !pingStatsEnabledNodesRef.current.has(uuid)
+      (uuid) => !pingStatsActiveNodesRef.current.has(uuid)
     );
     if (pendingUuids.length === 0) return;
 
-    const rowKey = pendingUuids.join("|");
+    const rowKey = String(rowIndex);
     if (queuedRowKeysRef.current.has(rowKey)) return;
 
     queuedRowKeysRef.current.add(rowKey);
-    queuedRowsRef.current.push(pendingUuids);
+    queuedRowsRef.current.push({ rowIndex, uuids: rowUuids });
     processNextRowRef.current();
   }, []);
+
+  const markPingStatsRowItem = React.useCallback((
+    rowIndex: number,
+    uuid: string,
+    isActive: boolean
+  ) => {
+    const activeRows = activeRowItemsRef.current;
+    const rowItems = activeRows.get(rowIndex) || new Set<string>();
+
+    if (isActive) {
+      rowItems.add(uuid);
+      activeRows.set(rowIndex, rowItems);
+      enqueuePingStatsRow(rowIndex, rowUuidsByIndexRef.current[rowIndex] || []);
+      return;
+    }
+
+    rowItems.delete(uuid);
+    if (rowItems.size > 0) {
+      activeRows.set(rowIndex, rowItems);
+      return;
+    }
+
+    activeRows.delete(rowIndex);
+    deactivatePingStatsRow(rowIndex);
+  }, [deactivatePingStatsRow, enqueuePingStatsRow]);
 
   React.useEffect(() => {
     const grid = gridRef.current;
@@ -611,6 +672,10 @@ export const NodeGrid = ({ nodes, liveData }: NodeGridProps) => {
   }, [sortedNodes, columns]);
 
   React.useEffect(() => {
+    rowUuidsByIndexRef.current = rowUuidsByIndex;
+  }, [rowUuidsByIndex]);
+
+  React.useEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
 
@@ -619,18 +684,25 @@ export const NodeGrid = ({ nodes, liveData }: NodeGridProps) => {
     );
 
     if (typeof IntersectionObserver === "undefined") {
-      enqueuePingStatsRow(rowUuidsByIndex[0] || []);
-      return;
+      const firstRowUuids = rowUuidsByIndex[0] || [];
+      activeRowItemsRef.current.set(0, new Set(firstRowUuids));
+      enqueuePingStatsRow(0, firstRowUuids);
+
+      return () => {
+        activeRowItemsRef.current.delete(0);
+        deactivatePingStatsRow(0);
+      };
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-
-          const rowIndex = Number((entry.target as HTMLElement).dataset.rowIndex);
+          const item = entry.target as HTMLElement;
+          const rowIndex = Number(item.dataset.rowIndex);
+          const uuid = item.dataset.nodeUuid;
+          if (!uuid) return;
           if (!Number.isFinite(rowIndex)) return;
-          enqueuePingStatsRow(rowUuidsByIndex[rowIndex] || []);
+          markPingStatsRowItem(rowIndex, uuid, entry.isIntersecting);
         });
       },
       {
@@ -642,8 +714,14 @@ export const NodeGrid = ({ nodes, liveData }: NodeGridProps) => {
 
     gridItems.forEach((item) => observer.observe(item));
 
-    return () => observer.disconnect();
-  }, [rowUuidsByIndex, enqueuePingStatsRow]);
+    return () => {
+      observer.disconnect();
+      activeRowItemsRef.current.forEach((_rowItems, rowIndex) => {
+        deactivatePingStatsRow(rowIndex);
+      });
+      activeRowItemsRef.current.clear();
+    };
+  }, [deactivatePingStatsRow, enqueuePingStatsRow, markPingStatsRowItem, rowUuidsByIndex]);
 
   return (
     <div
@@ -664,13 +742,14 @@ export const NodeGrid = ({ nodes, liveData }: NodeGridProps) => {
             key={node.uuid}
             data-node-grid-item="true"
             data-row-index={rowIndex}
+            data-node-uuid={node.uuid}
             className="flex min-w-0"
           >
             <Node
               basic={node}
               live={nodeData}
               online={isOnline}
-              pingStatsEnabled={pingStatsEnabledNodes.has(node.uuid)}
+              pingStatsEnabled={pingStatsActiveNodes.has(node.uuid)}
             />
           </div>
         );

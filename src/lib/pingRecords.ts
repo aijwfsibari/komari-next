@@ -43,6 +43,7 @@ type PingRecordsCacheEntry = {
 };
 
 const PING_RECORDS_CACHE_TTL_MS = 60_000;
+export const PING_RECORDS_AUTO_REFRESH_MS = 60_000;
 const MAX_CONCURRENT_PING_RECORD_REQUESTS = 2;
 const pingRecordsCache = new Map<string, PingRecordsCacheEntry>();
 let activePingRecordRequests = 0;
@@ -104,7 +105,8 @@ function runWithPingRecordRequestLimit<T>(task: () => Promise<T>): Promise<T> {
 export async function fetchPingRecords(
   call: RPC2Call,
   uuid: string | null | undefined,
-  hours: number
+  hours: number,
+  options: { forceRefresh?: boolean } = {}
 ): Promise<PingRecordsResponse> {
   const normalizedUuid = normalizeUuid(uuid);
   const normalizedHours = normalizeHours(hours);
@@ -117,9 +119,11 @@ export async function fetchPingRecords(
   const cacheKey = getCacheKey(normalizedUuid, normalizedHours);
   const cached = pingRecordsCache.get(cacheKey);
 
-  if (cached && cached.expiresAt > now) {
-    if (cached.data) return cached.data;
+  if (cached) {
     if (cached.promise) return cached.promise;
+    if (!options.forceRefresh && cached.expiresAt > now && cached.data) {
+      return cached.data;
+    }
   }
 
   const promise = runWithPingRecordRequestLimit(() =>

@@ -19,7 +19,7 @@ import { useRPC2Call } from "@/contexts/RPC2Context";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { fetchPingRecords, type PingRecord, type PingTaskInfo } from "@/lib/pingRecords";
+import { fetchPingRecords, PING_RECORDS_AUTO_REFRESH_MS, type PingRecord, type PingTaskInfo } from "@/lib/pingRecords";
 
 const colors = [
   "#F38181",
@@ -135,22 +135,33 @@ const PingChart = ({ uuid }: { uuid: string }) => {
     setLoading(true);
     setError(null);
     let active = true;
-    (async () => {
+    let hasReceivedResponse = false;
+    const fetchChartData = async (forceRefresh = false) => {
       try {
-        const result = await fetchPingRecords(call, uuid, hours);
+        const result = await fetchPingRecords(call, uuid, hours, { forceRefresh });
         if (!active) return;
+        hasReceivedResponse = true;
         setRemoteData(result.records);
         setTasks(result?.tasks || []);
         setError(null);
         setLoading(false);
       } catch (err: any) {
         if (!active) return;
-        setError(err?.message || "Error");
+        if (!hasReceivedResponse) {
+          setError(err?.message || "Error");
+        }
         setLoading(false);
       }
-    })();
+    };
+
+    void fetchChartData();
+    const refreshTimer = window.setInterval(() => {
+      void fetchChartData(true);
+    }, PING_RECORDS_AUTO_REFRESH_MS);
+
     return () => {
       active = false;
+      window.clearInterval(refreshTimer);
     };
   }, [hours, uuid, call]);
 

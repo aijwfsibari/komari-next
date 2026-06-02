@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRPC2Call } from '@/contexts/RPC2Context';
-import { fetchPingRecords, type PingRecord } from '@/lib/pingRecords';
+import { fetchPingRecords, PING_RECORDS_AUTO_REFRESH_MS, type PingRecord } from '@/lib/pingRecords';
 
 export interface PingHistoryPoint {
   time: string;
@@ -84,11 +84,14 @@ export function usePingStats(uuid: string, hours: number = 24, enabled: boolean 
 
     let active = true;
 
-    const fetchStats = async () => {
+    let hasReceivedResponse = false;
+
+    const fetchStats = async (forceRefresh = false) => {
       try {
-        const result = await fetchPingRecords(call, uuid, hours);
+        const result = await fetchPingRecords(call, uuid, hours, { forceRefresh });
         if (!active) return;
 
+        hasReceivedResponse = true;
         const records = result?.records || [];
         const tasks = result?.tasks || [];
 
@@ -127,14 +130,20 @@ export function usePingStats(uuid: string, hours: number = 24, enabled: boolean 
         });
       } catch {
         if (!active) return;
-        setStats(createEmptyStats());
+        if (!hasReceivedResponse) {
+          setStats(createEmptyStats());
+        }
       }
     };
 
     void fetchStats();
+    const refreshTimer = window.setInterval(() => {
+      void fetchStats(true);
+    }, PING_RECORDS_AUTO_REFRESH_MS);
 
     return () => {
       active = false;
+      window.clearInterval(refreshTimer);
     };
   }, [uuid, hours, enabled, call]);
 
