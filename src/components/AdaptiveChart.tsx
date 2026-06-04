@@ -108,7 +108,7 @@ export default function AdaptiveChart({ value, label, subLabel, color, compact =
         <div className="text-center">
           <div className="text-xs font-semibold text-foreground/90">{label}</div>
           {subLabel && (
-            <div className="text-[10px] text-muted-foreground/60">{subLabel}</div>
+            <div className="text-[10px] text-muted-foreground/60 whitespace-nowrap">{subLabel}</div>
           )}
         </div>
         <div className="w-full max-w-[80px] space-y-1">

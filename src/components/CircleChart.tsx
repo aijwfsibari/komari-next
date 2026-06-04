@@ -149,7 +149,7 @@ export default function CircleChart({
       <div className="text-center mt-2">
         <div className="text-xs font-semibold text-foreground/90">{label}</div>
         {subLabel && (
-          <div className="text-[10px] text-muted-foreground/60 mt-0.5">{subLabel}</div>
+          <div className="text-[10px] text-muted-foreground/60 mt-0.5 whitespace-nowrap">{subLabel}</div>
         )}
       </div>
     </div>
