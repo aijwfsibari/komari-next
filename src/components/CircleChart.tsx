@@ -54,9 +54,7 @@ export default function CircleChart({
 
   const fillColor = getThemeColor();
 
-  const renderSVG = (strokeWidth: number) => {
-    // 50 is center (cx, cy), so max radius is 50. We subtract half of strokeWidth to stay inside.
-    const radius = 50 - strokeWidth / 2;
+  const renderSVG = (radius: number, strokeWidth: number) => {
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (chartValue / 100) * circumference;
     
@@ -103,7 +101,7 @@ export default function CircleChart({
     return (
       <div className="flex items-center justify-center">
         <div className="h-[40px] w-[40px] relative">
-          {renderSVG(12)}
+          {renderSVG(36, 16)}
           {/* Centered Percentage for compact mode */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span className="text-[11px] font-bold text-foreground">
@@ -119,7 +117,7 @@ export default function CircleChart({
   return (
     <div className="flex flex-col items-center justify-center p-2">
       <div className="h-[90px] w-[90px] relative">
-        {renderSVG(10)}
+        {renderSVG(40, 9)}
         {/* Centered Percentage */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span className="text-base font-bold text-foreground drop-shadow-sm tracking-tight">
