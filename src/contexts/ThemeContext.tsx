@@ -63,6 +63,7 @@ interface ThemeContextType {
   themeConfig: ThemeConfig;
   managedThemeSettings: ManagedThemeSettings;
   isThemeSettingsAdmin: boolean;
+  isThemeLoaded: boolean;
   statusCardsVisibility: StatusCardsVisibility;
   nodeViewMode: NodeViewMode;
   appearance: Appearance;
@@ -701,6 +702,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [localLanguageOverride, setLocalLanguageOverride] =
     useState<string | undefined>(readInitialLanguageOverride);
   const [managedThemeSettings, setManagedThemeSettings] = useState<ManagedThemeSettings>({});
+  const [isThemeLoaded, setIsThemeLoaded] = useState(false);
   const [managedSettingsSignature, setManagedSettingsSignature] = useState(
     getManagedSettingsSignature({})
   );
@@ -931,10 +933,12 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (!mounted) return;
         const rawSettings = parseThemeSettings(resp?.data?.theme_settings);
         applyManagedSettings(rawSettings);
+        setIsThemeLoaded(true);
       })
       .catch(() => {
         if (!mounted) return;
         applyManagedSettings({});
+        setIsThemeLoaded(true);
       });
 
     return () => {
@@ -1194,6 +1198,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       themeConfig,
       managedThemeSettings,
       isThemeSettingsAdmin: adminState === "yes",
+      isThemeLoaded,
       statusCardsVisibility,
       nodeViewMode,
       appearance,
@@ -1222,6 +1227,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     [
       appearance,
       adminState,
+      isThemeLoaded,
       language,
       managedThemeSettings,
       nodeViewMode,

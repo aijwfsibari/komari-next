@@ -121,7 +121,7 @@ export default function DashboardContent() {
   const [t] = useTranslation();
   const { live_data } = useLiveData();
   const { publicInfo } = usePublicInfo();
-  const { themeConfig } = useTheme();
+  const { themeConfig, isThemeLoaded } = useTheme();
   
   // Sync document title with backend-set custom title
   useEffect(() => {
@@ -292,7 +292,7 @@ export default function DashboardContent() {
             ))}
         </div>
 
-        {mounted && statusCardsVisibility.mapView && (
+        {mounted && isThemeLoaded && statusCardsVisibility.mapView && (
           <NodeMapView
             nodes={nodeList ?? []}
             liveData={live_data?.data ?? { online: [], data: {} }}
