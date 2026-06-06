@@ -415,7 +415,7 @@ const TopCard: React.FC<TopCardProps> = ({
   // Minimal layout: Borderless, clean design
   if (layout === 'minimal') {
     return (
-      <div className="relative rounded-xl bg-gradient-to-br from-muted/40 to-muted/20 hover:from-muted/50 hover:to-muted/30 transition-all duration-200 backdrop-blur-sm border border-border/50">
+      <div data-card-blur-surface="true" className="relative rounded-xl bg-gradient-to-br from-muted/40 to-muted/20 hover:from-muted/50 hover:to-muted/30 transition-all duration-200 backdrop-blur-sm border border-border/50">
         {/* Mobile: compact single line */}
         <div className="p-3 sm:hidden">
           <div className="flex items-center justify-between gap-2">
